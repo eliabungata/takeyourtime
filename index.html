@@ -460,7 +460,9 @@ const customName = urlParams.get('name') || "Misoji";
 const customHeadline = urlParams.get('headline') || "";
 const customWish = urlParams.get('wish') || "Well it looks just like —";
 const customSign = urlParams.get('sign') || "You.";
-const customMessage = urlParams.get('message') || "Have you ever wondered how a beautiful moment looks like ?";
+
+// CHANGED: "how" replaced with "what" for grammatically seamless poetic phrasing
+const customMessage = urlParams.get('message') || "Have you ever wondered what a beautiful moment looks like ?";
 
 document.getElementById('hl').innerHTML = `${customName} <em>${customHeadline}</em>`;
 document.getElementById('wsh').textContent = customWish;
@@ -470,7 +472,6 @@ document.getElementById('nm').textContent = customSign;
 const msgEl = document.getElementById('msg');
 const charElements = [];
 
-// Split message perfectly by structural blank space parameters
 const words = customMessage.split(" ");
 words.forEach((word, wIdx) => {
   if (word.length === 0) return;
@@ -488,7 +489,6 @@ words.forEach((word, wIdx) => {
   
   msgEl.appendChild(wordSpan);
   
-  // Inject explicit structural breaking spaces between localized nodes
   if (wIdx < words.length - 1) {
     const spaceSpan = document.createElement('span');
     spaceSpan.className = 'char';
@@ -660,10 +660,6 @@ function triggerCinematicClimax() {
     osc.start(time + noteDelay);
     osc.stop(time + noteDelay + 3.5);
   });
-}
-
-function startStarTwinkleGenerator() {
-  return;
 }
 
 /* ── UNLOCK INTERACTION ── */

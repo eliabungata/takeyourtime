@@ -231,7 +231,7 @@
     transition: opacity 0.8s ease, transform 0.8s ease, box-shadow 0.4s, background-position 0.4s;
     outline: none;
     width: auto;
-    max-width: 100%; /* Force obedience to container width */
+    max-width: 100%; 
     -webkit-tap-highlight-color: transparent;
     animation: dynamicPulse 2s infinite ease-in-out, fluidGlow 4s linear infinite;
   }
@@ -239,7 +239,7 @@
   .action-btn .btn-text-segment {
     display: inline-block;
     line-height: 1.3;
-    white-space: normal; /* Safely wraps down word-by-word if screen gets extremely small */
+    white-space: normal; 
   }
 
   @keyframes fluidGlow {
@@ -263,10 +263,9 @@
     width: 32px;
     height: 24px;
     pointer-events: none;
-    flex-shrink: 0; /* Never distort the finger icon structure */
+    flex-shrink: 0; 
   }
 
-  /* Radial ripples centered on the tip of the pointer cursor */
   .tap-ripple-ring {
     position: absolute;
     top: 50%;
@@ -288,7 +287,6 @@
     100% { transform: translate(-50%, -50%) scale(5.5); opacity: 0; }
   }
 
-  /* Right Hand Index Cursor Silhouette */
   .pointer-hand-svg {
     position: absolute;
     top: 50%;
@@ -357,7 +355,6 @@
     transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  /* EXTRA SAFETY COMPRESSION FOR NARROW SCREENS (e.g. iPhone SE, Mini phones) */
   @media (max-width: 480px) {
     .action-btn {
       padding: 14px 20px;
@@ -365,13 +362,8 @@
       letter-spacing: 0.1em;
       gap: 4px 6px;
     }
-    .tap-guide-inline {
-      width: 28px;
-    }
-    .pointer-hand-svg {
-      width: 20px;
-      height: 20px;
-    }
+    .tap-guide-inline { width: 28px; }
+    .pointer-hand-svg { width: 20px; height: 20px; }
   }
 </style>
 </head>
@@ -572,8 +564,10 @@ let audioCtx = null;
 let ambientDroneOsc = null;
 let ambientDroneGain = null;
 let isGenerativePlaying = false;
+let isAudioActive = true; 
 
 function initAudioEngine() {
+  if (!isAudioActive) return; 
   if (audioCtx) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
     return;
@@ -586,7 +580,7 @@ function initAudioEngine() {
 }
 
 function startAmbientDrone() {
-  if (ambientDroneOsc) return;
+  if (ambientDroneOsc || !isAudioActive) return;
   
   ambientDroneGain = audioCtx.createGain();
   ambientDroneGain.gain.setValueAtTime(0, audioCtx.currentTime);
@@ -601,6 +595,7 @@ function startAmbientDrone() {
 }
 
 function triggerCinematicClimax() {
+  if (!isAudioActive) return;
   if (!audioCtx) initAudioEngine();
   if (audioCtx.state === 'suspended') audioCtx.resume();
 
@@ -610,76 +605,52 @@ function triggerCinematicClimax() {
     ambientDroneGain.gain.cancelScheduledValues(time);
     ambientDroneGain.gain.setValueAtTime(ambientDroneGain.gain.value, time);
     ambientDroneGain.gain.linearRampToValueAtTime(0.12, time + 0.1);
-    ambientDroneGain.gain.exponentialRampToValueAtTime(0.03, time + 5.0);
+    ambientDroneGain.gain.exponentialRampToValueAtTime(0.0001, time + 4.0); // Smooth drone fade within 4 seconds
   }
 
   const romanticScale = [174.61, 220.00, 261.63, 329.63, 392.00, 440.00];
   
   romanticScale.forEach((freq, idx) => {
-    const noteDelay = idx * 0.09; 
+    const noteDelay = idx * 0.08; 
     const osc = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
     
     osc.type = 'sine'; 
     osc.frequency.setValueAtTime(freq, time + noteDelay);
     osc.frequency.linearRampToValueAtTime(freq * 0.998, time + noteDelay + 0.5);
-    osc.frequency.linearRampToValueAtTime(freq, time + noteDelay + 1.2);
 
     gainNode.gain.setValueAtTime(0, time + noteDelay);
     gainNode.gain.linearRampToValueAtTime(0.14, time + noteDelay + 0.05); 
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, time + noteDelay + 2.6);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, time + noteDelay + 3.2); // Tail components decay beautifully by 3.2s
 
-    const echoGain = audioCtx.createGain();
-    echoGain.gain.setValueAtTime(0, time + noteDelay);
-    echoGain.gain.linearRampToValueAtTime(0.05, time + noteDelay + 0.4);
-    echoGain.gain.exponentialRampToValueAtTime(0.0001, time + noteDelay + 3.4);
-    
     osc.connect(gainNode);
     gainNode.connect(audioCtx.destination);
-    osc.connect(echoGain);
-    echoGain.connect(audioCtx.destination);
     
     osc.start(time + noteDelay);
-    osc.stop(time + noteDelay + 4.0);
+    osc.stop(time + noteDelay + 3.5);
   });
-
-  if (!isGenerativePlaying) {
-    isGenerativePlaying = true;
-    startStarTwinkleGenerator();
-  }
 }
 
 function startStarTwinkleGenerator() {
-  if (!isGenerativePlaying || !audioCtx) return;
-  const nextNoteDelay = Math.random() * 2800 + 1800; 
-  setTimeout(() => {
-    if (!isGenerativePlaying) return;
-    const romanticTwinkles = [440.00, 523.25, 659.25, 783.99, 880.00];
-    const freq = romanticTwinkles[Math.floor(Math.random() * romanticTwinkles.length)];
-    const time = audioCtx.currentTime;
-    
-    const osc = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(freq, time);
-    
-    gainNode.gain.setValueAtTime(0, time);
-    gainNode.gain.linearRampToValueAtTime(0.025, time + 0.15); 
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, time + 2.2);
-    
-    osc.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    osc.start(time);
-    osc.stop(time + 2.5);
-    
-    startStarTwinkleGenerator();
-  }, nextNoteDelay);
+  // Disabled generator pattern to ensure complete silence after the click sequence
+  return;
 }
 
 /* ── UNLOCK INTERACTION ── */
 function unlockSmile(e) {
   e.preventDefault();
   triggerCinematicClimax();
+
+  // Flag to immediately reject any further touch/click attempts to start audio
+  isGenerativePlaying = false; 
+
+  // Master fade block: shut down audio context entirely after 4.5 seconds
+  setTimeout(() => {
+    isAudioActive = false;
+    if (audioCtx && audioCtx.state !== 'closed') {
+      audioCtx.close().catch(err => console.log(err));
+    }
+  }, 4500);
 
   const container = document.getElementById('btnContainer');
   const msg = document.getElementById('msg');
